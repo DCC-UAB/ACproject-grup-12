@@ -30,3 +30,7 @@ train.to_csv('train_dataset.csv', index=False)
 test.to_csv('test_dataset.csv', index=False)
 
 print("\nLos conjuntos de datos filtrados y divididos han sido guardados como 'train_dataset.csv' y 'test_dataset.csv'.")
+
+
+
+HOLA
