@@ -1,41 +1,40 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-# Leer el archivo CSV
-file_path = r'C:\Users\usuari\Desktop\3r dades\APRENENTATGE COMPUTACIONAL\ratings_Electronics.csv'
+ruta = r'C:\Users\usuari\Desktop\3r dades\APRENENTATGE COMPUTACIONAL\ratings_Electronics.csv'
+data = pd.read_csv(ruta, header=None, names=['User ID', 'Product ID', 'Rating', 'Time Stamp'])
 
-# Leer el dataset
-data = pd.read_csv(file_path, header=None, names=['User ID', 'Product ID', 'Rating', 'Time Stamp'])
+data = data.dropna()  # Elimina les files amb valors nuls
+data = data[(data['Rating'] >= 1) & (data['Rating'] <= 5)]  # Filtra les classificacions invàlides
+
+# print("Total de columnes després del primer filtratge: ",data.shape[0])
+
 
 mitjana_compres = data.groupby('User ID').size().mean()
+# print(f"La mitjana de compres per usuari és: {mitjana_compres}") 
 
-print(f"La mitjana de compres per usuari és: {mitjana_compres}") 
+# Tallem el dataset a 30000 linies per poder filtar aquells usuaris que mínim han fet dues recomanacions
+data_retallat = data.head(30000)
+data = data_retallat.groupby('User ID').filter(lambda x: len(x) > 1)
+print("Un cop aplicats tots els filtratges tenim una Dataset de: ",data.shape[0],"files.")
 
-"""
 
-# Filtrar datos incorrectos
-# Asegurarse de que las columnas no tengan valores nulos y que las calificaciones (Rating) estén entre 1 y 5
-data = data.dropna()  # Elimina filas con valores nulos
-data = data[(data['Rating'] >= 1) & (data['Rating'] <= 5)]  # Filtra las calificaciones inválidas
+# Dividim les dades en un conjunt de train (60%) i un altre de temporal (40%)
+train, temp = train_test_split(data, test_size=0.4, random_state=42)
+# Dividim el conjunt temporal en un de test(50%) i un de validació (50%)
+test, validation = train_test_split(temp, test_size=0.5, random_state=42)
 
-# Recortar el dataset a solo 500 líneas para una muestra más pequeña
-data_recortado = data.head(500)
-
-# Dividir los datos en conjunto de entrenamiento y prueba (80% train, 20% test)
-train, test = train_test_split(data_recortado, test_size=0.2, random_state=42)
-
-# Mostrar información de los conjuntos
-print("\nConjunto de entrenamiento (train):")
+print("\nConjunt de train")
 print(train)
 
-print("\nConjunto de prueba (test):")
+print("\nConjunt de test:")
 print(test)
 
-# Guardar los datasets filtrados y divididos
+print("\nConjunt de validació:")
+print(validation)
+
+# Guardarem els datasets filtrats en CSV
 train.to_csv('train_dataset.csv', index=False)
 test.to_csv('test_dataset.csv', index=False)
+validation.to_csv('validation_dataset.csv', index=False)
 
-print("\nLos conjuntos de datos filtrados y divididos han sido guardados como 'train_dataset.csv' y 'test_dataset.csv'.")
-
-
-"""
