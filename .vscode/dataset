@@ -1,5 +1,8 @@
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.metrics.pairwise import cosine_similarity
+
 
 ruta = r'C:\Users\usuari\Desktop\3r dades\APRENENTATGE COMPUTACIONAL\ratings_Electronics.csv'
 data = pd.read_csv(ruta, header=None, names=['User ID', 'Product ID', 'Rating', 'Time Stamp'])
@@ -9,14 +12,13 @@ data = data[(data['Rating'] >= 1) & (data['Rating'] <= 5)]  # Filtra les classif
 
 # print("Total de columnes després del primer filtratge: ",data.shape[0])
 
-
 mitjana_compres = data.groupby('User ID').size().mean()
 # print(f"La mitjana de compres per usuari és: {mitjana_compres}") 
 
 # Tallem el dataset a 30000 linies per poder filtar aquells usuaris que mínim han fet dues recomanacions
 data_retallat = data.head(30000)
 data = data_retallat.groupby('User ID').filter(lambda x: len(x) > 1)
-print("Un cop aplicats tots els filtratges tenim una Dataset de: ",data.shape[0],"files.")
+# print("Un cop aplicats tots els filtratges tenim una Dataset de: ",data.shape[0],"files.")
 
 
 # Dividim les dades en un conjunt de train (60%) i un altre de temporal (40%)
@@ -24,6 +26,7 @@ train, temp = train_test_split(data, test_size=0.4, random_state=42)
 # Dividim el conjunt temporal en un de test(50%) i un de validació (50%)
 test, validation = train_test_split(temp, test_size=0.5, random_state=42)
 
+"""
 print("\nConjunt de train")
 print(train)
 
@@ -32,9 +35,89 @@ print(test)
 
 print("\nConjunt de validació:")
 print(validation)
+"""
 
 # Guardarem els datasets filtrats en CSV
 train.to_csv('train_dataset.csv', index=False)
 test.to_csv('test_dataset.csv', index=False)
 validation.to_csv('validation_dataset.csv', index=False)
 
+
+
+# 1. RECOMANADOR USER-USER
+
+
+# Creem una matriu de valoracions on les files són usuaris i les columnes són productes
+user_item_matriu = data.pivot(index='User ID', columns='Product ID', values='Rating')
+# print (user_item_matriu)
+# rint(user_item_matriu.shape)
+
+# Omplim els valors nuls amb 0 (ja que significa que l'usuari no ha valorat el producte)
+user_item_matriu = user_item_matriu.fillna(0)
+
+# Calculem la matriu de similitud entre usuaris utilitzant la similitud cosinus
+similaritat_usuaris = cosine_similarity(user_item_matriu)
+
+# Convertim la matriu de similitud a un DataFrame per facilitar la interpretació
+similaritat_usuaris_df = pd.DataFrame(similaritat_usuaris, index=user_item_matriu.index, columns=user_item_matriu.index)
+print (similaritat_usuaris_df)
+
+
+def recomanador_productes(usuari, numero_recomanacions=5):
+    """
+    Recomana productes a un usuari basant-se en el sistema de recomanacions *user-user*.
+    
+    :param usuari: ID de l'usuari per al qual es fan recomanacions.
+    :param numero_recomanacions: Nombre de productes a recomanar.
+    :return: Llista de productes recomanats.
+    """
+
+    # Obtenim els usuaris més similars al usuari objectiu
+    usuaris_similars = similaritat_usuaris_df[usuari].sort_values(ascending=False).iloc[1:]  # Excloem l'usuari mateix
+
+    # Agreguem les valoracions dels veïns més similars
+    ponderacions = pd.Series(dtype=float)
+    for similar_user, similarity in usuaris_similars.items():
+        # Valoracions de l'usuari similar ponderades per la seva similitud
+        ponderacions = ponderacions.add(user_item_matriu.loc[similar_user] * similarity, fill_value=0)
+
+    # Normalitzem dividint entre la suma de les similituds
+    sum_similarities = usuaris_similars.sum()
+    if sum_similarities > 0:
+        ponderacions = ponderacions / sum_similarities
+
+    # Excloem productes que l'usuari ja ha valorat
+    productes_classificats_usuaris = user_item_matriu.loc[usuari][user_item_matriu.loc[usuari] > 0].index
+    recomanacions = ponderacions.drop(productes_classificats_usuaris)
+
+    # Retornem els productes amb les puntuacions més altes
+    return recomanacions.sort_values(ascending=False).head(numero_recomanacions)
+
+# Exemple de recomanació per a un usuari
+usuari_a_recommanar = user_item_matriu.index[0]  # Seleccionem un usuari del dataset
+recomanacions = recomanador_productes(usuari_a_recommanar, numero_recomanacions=5)
+
+print(f"Recomanacions per a l'usuari {usuari_a_recommanar}:")
+print(recomanacions)
+
+
+
+
+"""
+
+def recomanador_productes(usuari, numero_recomanacions=5):
+
+    usuaris_similars = similaritat_usuaris_df[usuari].sort_values(ascending=False).iloc[1:] 
+    ponderacions = pd.Series(dtype=float)
+    for similar_user, similarity in usuaris_similars.items():
+        ponderacions = ponderacions.add(user_item_matriu.loc[similar_user] * similarity, fill_value=0)
+
+    sum_similarities = usuaris_similars.sum()
+    if sum_similarities > 0:
+        ponderacions = ponderacions / sum_similarities
+
+    productes_classificats_usuaris = user_item_matriu.loc[usuari][user_item_matriu.loc[usuari] > 0].index
+    recomanacions = ponderacions.drop(productes_classificats_usuaris)
+
+    return recomanacions.sort_values(ascending=False).head(numero_recomanacions)
+"""
