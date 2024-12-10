@@ -5,8 +5,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from dataset import recomanador_productes
-
 
 
 ruta = r'C:\Users\usuari\Desktop\3r dades\APRENENTATGE COMPUTACIONAL\ratings_Electronics.csv'
@@ -51,9 +49,13 @@ validation.to_csv('validation_dataset.csv', index=False)
 
 recomanador = print("Quin tipus de recomanador vols fer servir? : ")
 
-if recomanador == user : 
+
+if recomanador == "user" : 
     usuari_a_recommanar = user_item_matriu.index[0] 
     recomanacions = recomanador_productes(usuari_a_recommanar, numero_recomanacions=5)
 
     print(f"Recomanacions per a l'usuari {usuari_a_recommanar}:")
     print(recomanacions)
+
+
+
