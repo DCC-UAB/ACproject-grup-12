@@ -16,10 +16,10 @@ data = data[(data['Rating'] >= 1) & (data['Rating'] <= 5)]  # Filtra les classif
 # print("Total de columnes després del primer filtratge: ",data.shape[0])
 
 mitjana_compres = data.groupby('User ID').size().mean()
-# print(f"La mitjana de compres per usuari és: {mitjana_compres}") 
+print(f"La mitjana de compres per usuari és: {mitjana_compres}") 
 
 # Tallem el dataset a 30000 linies per poder filtar aquells usuaris que mínim han fet dues recomanacions
-data_retallat = data.head(10000)
+data_retallat = data.head(30000)
 data = data_retallat.groupby('User ID').filter(lambda x: len(x) > 1)
 # print("Un cop aplicats tots els filtratges tenim una Dataset de: ",data.shape[0],"files.")
 
@@ -39,8 +39,10 @@ print(test)
 print("\nConjunt de validació:")
 print(validation)
 """
-
 # Guardarem els datasets filtrats en CSV
+
+
+
 train.to_csv('train_dataset.csv', index=False)
 test.to_csv('test_dataset.csv', index=False)
 validation.to_csv('validation_dataset.csv', index=False)
@@ -56,6 +58,3 @@ if recomanador == "user" :
 
     print(f"Recomanacions per a l'usuari {usuari_a_recommanar}:")
     print(recomanacions)
-
-
-
